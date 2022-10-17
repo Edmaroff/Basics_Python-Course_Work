@@ -7,18 +7,31 @@ class VkDownload:
     def __init__(self, token_vk):
         self.token_vk = token_vk
 
+    def get_params(self):
+        return {
+            'access_token': self.token_vk,
+            'v': 5.131,
+        }
+
+    # Запрос для получения id пользователя, зная username
+    def get_id_user(self, username):
+        url = 'https://api.vk.com/method/users.get'
+        params = {
+            'user_ids': username,
+        }
+        response = requests.get(url, params=params | self.get_params()).json()
+        return ((response['response'])[0])['id']
+
     # Запрос для получения словаря со всеми фотографиями пользователя
     def requests_user_photo(self, user_id, count, album_id):
         url = 'https://api.vk.com/method/photos.get'
         params = {
-            'access_token': self.token_vk,
             'owner_id': user_id,
             'extended': 1,
             'album_id': album_id,
             'count': count,
-            'v': 5.131
         }
-        response = requests.get(url, params=params).json()
+        response = requests.get(url, params=params | self.get_params()).json()
         return response['response']['items']
 
     # Получение размера фото, зная URL
@@ -54,12 +67,38 @@ class VkDownload:
     def requests_user_albums(self, user_id=11524647):
         url = 'https://api.vk.com/method/photos.getAlbums'
         params = {
-            'access_token': self.token_vk,
             'owner_id': user_id,
-            'v': 5.131
         }
-        response = requests.get(url, params=params).json()
+        response = requests.get(url, params=params | self.get_params()).json()
         album_dictionary = {}
         for album_data in response['response']['items']:
             album_dictionary.update({album_data['title']: album_data['id']})
         return album_dictionary
+
+    # Работа кода, если загружаем фотографии со страницы пользователя
+    def information_output_avatar(self, user_id, instance_yd):
+        count = int(input('Сколько фотографий вы хотите скачать? '))
+        dict_data_photos = self.get_dict_info_photos(user_id, count)
+        name_folder = input('Введите название папки для загрузки: ')
+        instance_yd.upload_list_photos(dict_data_photos, name_folder)
+        from main import writing_to_file
+        writing_to_file(dict_data_photos)
+        print(f'{len(dict_data_photos)} фото установлены на ЯД, информация о них содержится в файле "upload_info.json".')
+
+    # Работа кода, если загружаем фотографии с альбомов пользователя
+    def information_output_album(self, user_id, instance_yd):
+        album = self.requests_user_albums(user_id)
+        if len(album) == 0:
+            print('У пользователя нет альбомов.')
+        else:
+            print(f'Список альбомов пользователя: {list(album.keys())}')
+            album_name = input('Введите название альбома из которого вы хотите скачать фотографии: ')
+            album_id = album[album_name]
+            count = int(input('Сколько фотографий вы хотите скачать? '))
+            dict_data_photos = self.get_dict_info_photos(user_id, count, album_id)
+            name_folder = input('Введите название папки для загрузки: ')
+            instance_yd.upload_list_photos(dict_data_photos, name_folder)
+            from main import writing_to_file
+            writing_to_file(dict_data_photos)
+            print(f'{len(dict_data_photos)} фото установлены на ЯД в папку {name_folder}, информация о них содержится в '
+                  f'файле "upload_info.json".')
