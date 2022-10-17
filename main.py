@@ -21,7 +21,6 @@ if __name__ == '__main__':
     token_yd = config['Yandex_Disk']['token']
     vk = VkDownload(token_vk)
     yd = YandexDisk(token_yd)
-
     user_id = input('Введите ID или username пользователя: ')
     if not user_id.isdigit():
         username = user_id
@@ -31,9 +30,4 @@ if __name__ == '__main__':
         vk.information_output_avatar(user_id, yd)
     if avatar == 'нет':
         vk.information_output_album(user_id, yd)
-
-config = configparser.ConfigParser()
-config.read("settings.ini")
-token_vk = config['VK']["token"]
-token_yd = config['Yandex_Disk']['token']
 
